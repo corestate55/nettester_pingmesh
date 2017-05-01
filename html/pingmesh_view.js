@@ -50,7 +50,7 @@ function setColor(d) {
 
     // dataset
     var hosts = [
-        "host11", "host12", "host21", "host22"//, "host31", "host32"
+        "host11", "host12", "host21", "host22", "host31", "host32"
     ].sort(); // normalize order
     var numbered_hosts = hosts.map(function(d,i) {
         return { "id": i, "host": d };

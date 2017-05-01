@@ -17,4 +17,4 @@ bundle exec rackup
 
 Sample View:
 
-[![screenshot](./figs/recording.gif)]
+![screenshot](./figs/recording.gif)
