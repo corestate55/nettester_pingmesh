@@ -99,8 +99,6 @@ function setColor(d) {
         .enter()
         .append("rect")
         .attrs({
-            // "x": function(d) { return scale((d.dst.id + 1) * cs); },
-            // "y": function(d) { return scale((d.src.id + 1) * cs); },
             "x": function(d) { return gridScale(d.dst.id); },
             "y": function(d) { return gridScale(d.src.id); },
             "rx": gridWidth/5, // rounded corner
@@ -145,7 +143,7 @@ function setColor(d) {
         })
         .text(function(d) { return d.host; });
 
-    // update each ractangle by interval
+    // update each rectangle by interval
     var t = d3.interval(function(elapsed) {
         var targetIndex = Math.floor(elapsed / 1000) % host_comb.length;
         // console.log("idToUpdate = " + target);
@@ -159,15 +157,21 @@ function setColor(d) {
         // console.log(rectangles)
         // end debug
 
+        // update (update rect element by key function)
         var update = svg.selectAll("rect").data([targetItem], key);
+
         var url = "http://localhost:9292/process/" + targetIndex;
         d3.json(url)
+            .on('beforesend', function() {
+                // select to update
+                update.style('stroke', 'mediumblue')
+            })
             .on('progress', function() {
-                // console.log("on.progress");
-                update.style('stroke', 'blue');
+                // updating
+                update.style('stroke', 'cyan');
             })
             .on('load', function(json) {
-                // update (update rect element by key function)
+                // finish updating
                 // targetItem.rtt.avg = setRandomRtt(targetItem.src.id, targetItem.dst.id);
                 targetItem.rtt.avg = json.avg;
 
