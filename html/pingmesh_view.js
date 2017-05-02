@@ -53,7 +53,7 @@ function setColor(d) {
         "host11", "host12", "host21", "host22", "host31", "host32"
     ].sort(); // normalize order
     var numbered_hosts = hosts.map(function(d,i) {
-        return { "id": i, "host": d };
+        return { "id": i+1, "host": d };
     });
     var host_comb = d3.cross(numbered_hosts, numbered_hosts).map(function(d) {
         return {
@@ -70,14 +70,12 @@ function setColor(d) {
     });
 
     var scs = 500; //svg canvas size (width = height: square canvas)
-    var cs = scs / (hosts.length + 1); // "cell" size
-    var scale = d3.scaleLinear()
-        .domain([0, (hosts.length + 1) * cs]) // range of dataset
-        .range([0, scs]); // range of svg canvas
-
-    // console.log(hosts);
-    // console.log(numbered_hosts);
-    // console.log(host_comb);
+    var gridScale = d3.scaleBand()
+        .domain(Array.from(Array(hosts.length + 1).keys()))
+        .range([0, scs])
+        .paddingInner(0.05)
+        .paddingOuter(0.1);
+    var gridWidth = gridScale.bandwidth();
 
     ///////////////////
     // Visualize Data
@@ -87,7 +85,7 @@ function setColor(d) {
         .append("svg")
         .attrs({"width": scs, "height": scs});
 
-// TODO: Band Scales
+// See Also: Band Scales
 // d3-scale/README.md at master · d3/d3-scale
 // https://github.com/d3/d3-scale/blob/master/README.md#band-scales
 
@@ -101,16 +99,18 @@ function setColor(d) {
         .enter()
         .append("rect")
         .attrs({
-            "x": function(d) { return scale((d.dst.id + 1) * cs); },
-            "y": function(d) { return scale((d.src.id + 1) * cs); },
-            "rx": scale(cs/5), // rounded corner
-            "ry": scale(cs/5),
-            "width": scale(cs),
-            "height": scale(cs),
+            // "x": function(d) { return scale((d.dst.id + 1) * cs); },
+            // "y": function(d) { return scale((d.src.id + 1) * cs); },
+            "x": function(d) { return gridScale(d.dst.id); },
+            "y": function(d) { return gridScale(d.src.id); },
+            "rx": gridWidth/5, // rounded corner
+            "ry": gridWidth/5,
+            "width": gridWidth,
+            "height": gridWidth,
             "id": key,
             "fill": setColor
         })
-        .style('stroke-width', scale(cs/20))
+        .style('stroke-width', gridWidth/20)
         .on("mouseover", function() {
             d3.select(this).style("stroke", "red");
         })
@@ -130,8 +130,8 @@ function setColor(d) {
         .append("text") // src(y) label
         .attrs({
             "class": "src",
-            "x": scale(5),
-            "y": function(d) { return scale((d.id + 1) * cs + cs/2); }
+            "x": gridScale(0),
+            "y": function(d) { return gridScale(d.id) + gridWidth/2; }
         })
         .text(function(d) { return d.host; });
     svg.selectAll("text.dst")
@@ -140,8 +140,8 @@ function setColor(d) {
         .append("text") // dst(x) label
         .attrs({
             "class": "dst",
-            "x": function(d) { return scale((d.id + 1) * cs + 5); },
-            "y": scale(cs - 5)
+            "x": function(d) { return gridScale(d.id); },
+            "y": gridScale(0) + gridWidth
         })
         .text(function(d) { return d.host; });
 

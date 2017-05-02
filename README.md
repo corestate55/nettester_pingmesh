@@ -1,5 +1,5 @@
 # nettester_pingmesh
-PingMesh as a sample application for NetTester
+PingMesh as a sample application for [NetTester](https://github.com/net-tester/net-tester)
 
 ## Install
 Bundle install
