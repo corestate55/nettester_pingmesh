@@ -5,16 +5,6 @@ console.log("start script");
 // functions
 ///////////////////
 
-function randomRtt() {
-    var gauss = d3.randomNormal(); // gaussian, mu=0, sigma=1
-    var rtt = Math.abs(gauss() * 30) + 1; // gaussian, mu=1ms, sigma=30ms
-    return Math.round(rtt * 100) / 100;
-}
-
-function setRandomRtt(idA, idB) {
-    return (idA === idB ? 0 : randomRtt());
-}
-
 function generateIdString(src, dst) {
     return src.host + "_to_" + dst.host;
 }
@@ -26,6 +16,10 @@ function key(d) {
 
 function generateTitleString(d) {
     return d.src.host + " -> " + d.dst.host + ", Avg: " + d.rtt.avg + "[ms]";
+}
+
+function generateErrorTitleString(d) {
+    return generateTitleString(d) + " (ERROR)";
 }
 
 function setColor(d) {
@@ -42,11 +36,54 @@ function setColor(d) {
     }
 }
 
+function updateGrid(url, svg, targetItem) {
+    // update (update rect element by key function)
+    var update = svg.selectAll("rect").data([targetItem], key);
+    d3.json(url)
+        .on('beforesend', function() {
+            // select to update
+            update.style('stroke', 'mediumblue')
+        })
+        .on('progress', function() {
+            // updating
+            update.style('stroke', 'cyan');
+        })
+        .on('load', function(json) {
+            // finish updating
+            // targetItem.rtt.avg = setRandomRtt(targetItem.src.id, targetItem.dst.id);
+            targetItem.rtt.avg = json.avg;
+
+            update
+                .transition()
+                .duration(500)
+                .styles({
+                    "fill": setColor,
+                    "stroke": "white"
+                })
+                .select("title") // update tooltip
+                .text(generateTitleString);
+        })
+        .on('error', function() {
+            console.log("on.error");
+            update
+                .transition()
+                .duration(500)
+                .styles({
+                    'fill': 'black',
+                    'stroke': 'white'
+                })
+                .select("title") // update tooltip
+                .text(generateErrorTitleString);
+        })
+        .timeout(4500)
+        .get();
+}
+
 (function() {
 
     ///////////////////
     // variables
-    // /////////////////
+    ///////////////////
 
     // dataset
     var hosts = [
@@ -61,9 +98,9 @@ function setColor(d) {
             "src": d[0],
             "dst": d[1],
             "rtt": {
-                "min": 0, // TBA, NOW not used.
+                "min": 0,
                 "max": 0,
-                "avg": setRandomRtt(d[0].id, d[1].id),
+                "avg": 0,
                 "mdev": 0
             }
         };
@@ -146,56 +183,12 @@ function setColor(d) {
     // update each rectangle by interval
     var t = d3.interval(function(elapsed) {
         var targetIndex = Math.floor(elapsed / 1000) % host_comb.length;
-        // console.log("idToUpdate = " + target);
         var targetItem = host_comb[targetIndex];
 
-        // start debug
-        // select rect element by #id
-        // var rectangles = svg.select("rect#" + targetItem.key)
-        //     .data([targetItem], key);
-        // console.log("update by " + targetItem.key);
-        // console.log(rectangles)
-        // end debug
-
-        // update (update rect element by key function)
-        var update = svg.selectAll("rect").data([targetItem], key);
-
-        var url = "http://localhost:9292/process/" + targetIndex;
-        d3.json(url)
-            .on('beforesend', function() {
-                // select to update
-                update.style('stroke', 'mediumblue')
-            })
-            .on('progress', function() {
-                // updating
-                update.style('stroke', 'cyan');
-            })
-            .on('load', function(json) {
-                // finish updating
-                // targetItem.rtt.avg = setRandomRtt(targetItem.src.id, targetItem.dst.id);
-                targetItem.rtt.avg = json.avg;
-
-                update
-                    .transition()
-                    .duration(500)
-                    .styles({
-                        "fill": setColor,
-                        "stroke": "white"
-                    })
-                    .select("title") // update tooltip
-                    .text(generateTitleString);
-            })
-            .on('error', function() {
-                console.log("on.error");
-                update
-                    .transition()
-                    .duration(500)
-                    .styles({
-                        'fill': 'black',
-                        'stroke': 'white'
-                    });
-            })
-            .get();
+        if (targetItem.src.id !== targetItem.dst.id) {
+            var url = "http://localhost:9292/process/" + targetIndex;
+            updateGrid(url, svg, targetItem)
+        }
 
         // debug
         // if (elapsed > host_comb.length * 1000) t.stop();

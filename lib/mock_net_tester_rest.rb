@@ -39,7 +39,7 @@ class MockNetTesterRest < Grape::API
     puts "#{params[:pid]}, #{rtt_data}"
 
     # delay several secs before reply response
-    sleep Random.rand(5)
+    sleep Random.rand(5.0)
     rtt_data
   end
 end
